@@ -6,6 +6,10 @@
 		"start": "node app.js"
 	},
 	"dependencies": {
-		"express": "^4.17.1"
+		"express": "^4.17.1",
+		"twitter-autohook": "^1.2.1",
+    "request": "^2.88.0",
+    "twit": "^2.2.11",
+		"dotenv": "10.0.0"
 	}
 }
