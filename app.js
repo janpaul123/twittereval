@@ -2,34 +2,67 @@ const express = require('express');
 const app = express();
 const port = 80;
 
+require('dotenv').config();
+
+var Twit = require("twit");
+const T = new Twit({
+  consumer_key: process.env.TWITTER_CONSUMER_KEY,
+  consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
+  access_token: process.env.TWITTER_ACCESS_TOKEN,
+  access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
+  timeout_ms: 60 * 1000, // optional HTTP request timeout to apply to all requests.
+  strictSSL: true // optional - requires SSL certificates to be valid.
+});
+
+function parseJS(text) {
+  debugger
+  const lines = text.split("\n");
+
+  let inCode = false;
+  const newLines = lines.map(line => {
+    if (line.match(/^```/)) {
+      inCode = !inCode;
+      return "";
+    }
+    if (inCode) {
+      return line.replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+    } else {
+      return "// "  + line;
+    }
+  })
+
+  return newLines.join("\n");
+}
+
 app.get('/', (req, res) => {
 	res.send('Hello World!');
 });
 
-app.get('/api/:id', (req, res) => {
-	res.send(`Get resource for ${req.params.id}.`);
+app.get('/:username/status/:tweetId', (req, res) => {
+	T.get('statuses/show', { id: req.params.tweetId, tweet_mode: 'extended' }, function (err, data, response) { // TODO: pull conversation id param
+    if (!data.in_reply_to_status_id) {
+      console.log(parseJS(data.full_text))
+      res.send(`<script>${parseJS(data.full_text)}</script>`);
+    } else {
+      // TODO - pull whole conversation
+    }
+  })
+  
+  
+  // res.send(`username: ${req.params.username}, tweetId: ${req.params.tweetId}`);
+
 });
 
 app.listen(port, () => {
-	console.log(`Example app listening at http://localhost:${port}`);
+	console.log(`App listening at http://localhost:${port}`);
 });
 
 const { Autohook } = require("twitter-autohook"); // uses ngrok
-var Twit = require("twit");
-require('dotenv').config();
 
-(async () => {
+
+const setupWebhook = async () => {
   try {
     const webhook = new Autohook();
-
-    var T = new Twit({
-      consumer_key: process.env.TWITTER_CONSUMER_KEY,
-      consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
-      access_token: process.env.TWITTER_ACCESS_TOKEN,
-      access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
-      timeout_ms: 60 * 1000, // optional HTTP request timeout to apply to all requests.
-      strictSSL: true // optional - requires SSL certificates to be valid.
-    });
 
     // Removes existing webhooks
     await webhook.removeWebhooks();
@@ -85,5 +118,9 @@ require('dotenv').config();
     console.error(e);
     process.exit(1);
   }
-})();
+};
+
+if (process.env.NODE_ENV === "production") {
+  setupWebhook();
+}
 
