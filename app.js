@@ -31,19 +31,27 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
-app.get("/:username/status/:tweetId", async (req, res) => {  
-  const { data: tweet } = await client.v2.singleTweet(req.params.tweetId, {
+// https://twitter.com/stevekrouse/status/1518981951385911298
+async function getTweetRecursive(tweetId){
+  const { data: tweet } = await client.v2.singleTweet(tweetId, {
     'tweet.fields': [
       'referenced_tweets',
       'conversation_id'
     ]
   });
   if (!tweet.referenced_tweets) {
-    console.log(parseJS(tweet.text));
-    res.send(`<script>${parseJS(tweet.text)}</script>`);
+    return parseJS(tweet.text);
   } else {
+    if (tweet.referenced_tweets[0].type === "replied_to") {
+      return await getTweetRecursive(tweet.referenced_tweets[0].id) + "\n\n" + parseJS(tweet.text);
+    }
     // TODO - search for ancestors
   }
+}
+console.log(getTweetRecursive("1518981951385911298"));
+
+app.get("/:username/status/:tweetId", async (req, res) => {  
+  res.send(`<script>${await getTweetRecursive(req.params.tweetId)}</script>`);
 });
 
 app.listen(port, () => {
