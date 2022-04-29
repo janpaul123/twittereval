@@ -1,21 +1,14 @@
+const { TwitterApi } = require('twitter-api-v2');
+
+require("dotenv").config();
+
+const client = new TwitterApi(process.env.Bearer_Token);
+
 const express = require("express");
 const app = express();
 const port = 80;
 
-require("dotenv").config();
-
-var Twit = require("twit");
-const T = new Twit({
-  consumer_key: process.env.TWITTER_CONSUMER_KEY,
-  consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
-  access_token: process.env.TWITTER_ACCESS_TOKEN,
-  access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
-  timeout_ms: 60 * 1000, // optional HTTP request timeout to apply to all requests.
-  strictSSL: true, // optional - requires SSL certificates to be valid.
-});
-
 function parseJS(text) {
-  debugger;
   const lines = text.split("\n");
 
   let inCode = false;
@@ -38,39 +31,44 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
-app.get("/:username/status/:tweetId", (req, res) => {
-  T.get(
-    "statuses/show",
-    {
-      id: req.params.tweetId,
-      tweet_mode: "extended",
-      "tweet.fields": "conversation_id",
-    },
-    function (err, data, response) {
-      if (!data.in_reply_to_status_id) {
-        console.log(parseJS(data.full_text));
-        res.send(`<script>${parseJS(data.full_text)}</script>`);
-      } else {
-        debugger
-        T.get("search/tweets", { conversation_id: data.conversation_id }, function (
-          err,
-          data,
-          response
-        ) {
-          debugger
-        });
-      }
-    }
-  );
-
-  // res.send(`username: ${req.params.username}, tweetId: ${req.params.tweetId}`);
+app.get("/:username/status/:tweetId", async (req, res) => {  
+  const { data: tweet } = await client.v2.singleTweet(req.params.tweetId, {
+    'tweet.fields': [
+      'referenced_tweets',
+      'conversation_id'
+    ]
+  });
+  if (!tweet.referenced_tweets) {
+    console.log(parseJS(tweet.text));
+    res.send(`<script>${parseJS(tweet.text)}</script>`);
+  } else {
+    // TODO - search for ancestors
+  }
 });
 
 app.listen(port, () => {
   console.log(`App listening at http://localhost:${port}`);
 });
 
+
+
+
+
+
+
+
+
+
 const { Autohook } = require("twitter-autohook"); // uses ngrok
+var Twit = require("twit");
+const T = new Twit({
+  consumer_key: process.env.TWITTER_CONSUMER_KEY,
+  consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
+  access_token: process.env.TWITTER_ACCESS_TOKEN,
+  access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
+  timeout_ms: 60 * 1000, // optional HTTP request timeout to apply to all requests.
+  strictSSL: true, // optional - requires SSL certificates to be valid.
+});
 
 const setupWebhook = async () => {
   try {

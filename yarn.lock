@@ -1540,6 +1540,11 @@ twit@^2.2.11:
     mime "^1.3.4"
     request "^2.68.0"
 
+twitter-api-v2@^1.12.0:
+  version "1.12.0"
+  resolved "https://registry.yarnpkg.com/twitter-api-v2/-/twitter-api-v2-1.12.0.tgz#0c69fd9578a4e870404bb449cd3634275c152d2e"
+  integrity sha512-8Fv+sUYY0P1gloiBSgG1w/NSuGUIP32lDKMPVzIMX3jd4zDhiJFtCft41fKs+JqcD8m7s+4vkMO/XwyY2+NULQ==
+
 twitter-autohook@^1.2.1:
   version "1.7.2"
   resolved "https://registry.yarnpkg.com/twitter-autohook/-/twitter-autohook-1.7.2.tgz#c32a6f058fdc35e293223466460571faa8c2bc78"
