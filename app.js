@@ -6,8 +6,12 @@ const { TwitterApi } = require('twitter-api-v2');
 const client = new TwitterApi(process.env.Bearer_Token);
 
 const express = require("express");
+const path = require('path');
+
 const app = express();
 const port = 80;
+
+app.use('/node_modules/',express.static(__dirname+'/node_modules/'));
 
 async function parseJS(text) {
   const lines = text.split("\n");
@@ -38,11 +42,11 @@ async function parseJS(text) {
 }
 
 app.get("/", (req, res) => {
-  res.send("Hello World!");
+  res.sendFile(path.join(__dirname, '/index.html'));
 });
 
 function getTweetIdFromUrl(url) {
-  const regex = /https:\/\/twitter\.com\/.*\/status\/(\d+)/;
+  const regex = /twitter\.com\/.*\/status\/(\d+)/;
   const match = url.match(regex);
   return match && match[1];
 }
@@ -78,6 +82,11 @@ async function getTweetRecursive(tweetId){
 
 app.get("/:username/status/:tweetId", async (req, res) => {  
   res.send(`<script>\n\n${await getTweetRecursive(req.params.tweetId)}</script>`);
+});
+
+app.get("/eval/:text", async (req, res) => {  
+  console.log(req.params.text);
+  res.send(`<script>\n\n${await parseJS(req.params.text)}</script>`);
 });
 
 app.listen(port, () => {
