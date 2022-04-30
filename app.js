@@ -1,6 +1,8 @@
 require("dotenv").config();
 
-require("./eval_bot");
+if (process.env.TWITTER_CONSUMER_KEY) {
+  require("./eval_bot");
+}
 
 const { TwitterApi } = require('twitter-api-v2');
 const client = new TwitterApi(process.env.Bearer_Token);
