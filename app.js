@@ -13,6 +13,24 @@ const path = require('path');
 const app = express();
 const port = 80;
 
+const cache = {};
+async function getTweet(tweetId) {
+  if (cache[tweetId]) {
+    return cache[tweetId];
+  }
+
+  const { data: tweet } = await client.v2.singleTweet(tweetId, {
+    'tweet.fields': [
+      'referenced_tweets',
+      'conversation_id',
+      'entities',
+    ]
+  });
+  cache[tweetId] = tweet;
+
+  return tweet;
+}
+
 app.use('/node_modules/',express.static(__dirname+'/node_modules/'));
 
 async function parseJS(text) {
@@ -60,13 +78,7 @@ function isTwitterPhotoUrl(url) {
 
 // https://twitter.com/JanPaul123/status/1520185309719261184
 async function getTweetRecursive(tweetId){
-  const { data: tweet } = await client.v2.singleTweet(tweetId, {
-    'tweet.fields': [
-      'referenced_tweets',
-      'conversation_id',
-      'entities',
-    ]
-  });
+  const tweet = await getTweet(tweetId)
 
   // replace the twitter short urls ie 'https://t.co/vNeCDdhwxD'
   // with the expanded, origial url
@@ -100,6 +112,17 @@ async function getTweetRecursive(tweetId){
   return code;
 }
 // getTweetRecursive("1520185309719261184")
+
+async function testCache() {
+  const start = Date.now();
+  await getTweetRecursive("1520185309719261184")
+  console.log(Date.now() - start);
+
+  const start2 = Date.now();
+  await getTweetRecursive("1520185309719261184")
+  console.log(Date.now() - start2);
+}
+// testCache();
 
 app.get("/:username/status/:tweetId", async (req, res) => {  
   res.send(`<script>\n\n${await getTweetRecursive(req.params.tweetId)}</script>`);
