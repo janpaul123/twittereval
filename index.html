@@ -60,16 +60,18 @@
         const editor = monaco.editor.create(
           document.getElementById("editor-container"),
           {
-            value: [
-            "twitter.com/janpaul123/status/1520185309719261184",
-            "",
-              "```js",
-              "function x() {",
-              '\tconsole.log("Hello world!");',
-              "}",
-              "x();",
-              "```",
-            ].join("\n"),
+            value:
+              localStorage.getItem("code") ||
+              [
+                "twitter.com/janpaul123/status/1520185309719261184",
+                "",
+                "```js",
+                "function x() {",
+                '\tconsole.log("Hello world!");',
+                "}",
+                "x();",
+                "```",
+              ].join("\n"),
             language: "markdown",
             minimap: false,
           }
@@ -78,6 +80,7 @@
         function eval() {
           const iframe = document.getElementById("output");
           iframe.src = `/eval/${encodeURIComponent(editor.getValue())}`;
+          localStorage.setItem("code", editor.getValue());
         }
         eval();
         editor.onDidChangeModelContent(eval);
