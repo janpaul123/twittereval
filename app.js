@@ -74,7 +74,8 @@ async function getTweetRecursive(tweetId){
     tweet.text = tweet.text.replaceAll(entity.url, entity.expanded_url);
   }
 
-  // remove the last words if they are twitter photos
+   // twitter appends the URLs of any image attachments to the text body
+   // this code repeatedly removes the final words if they are twitter photos
   while(true) {
     const match = tweet.text.match(/\s*\S+\s*$/);
     if (match) {
