@@ -53,6 +53,11 @@ function getTweetIdFromUrl(url) {
   return match && match[1];
 }
 
+function isTwitterPhotoUrl(url) {
+  const regex = /twitter\.com\/.*\/status\/\d+\/photo\/\d+/;
+  return !!url.match(regex);
+}
+
 // https://twitter.com/JanPaul123/status/1520185309719261184
 async function getTweetRecursive(tweetId){
   const { data: tweet } = await client.v2.singleTweet(tweetId, {
@@ -68,7 +73,20 @@ async function getTweetRecursive(tweetId){
   for (const entity of tweet?.entities?.urls || []) {
     tweet.text = tweet.text.replaceAll(entity.url, entity.expanded_url);
   }
-  
+
+  // remove the last words if they are twitter photos
+  while(true) {
+    const match = tweet.text.match(/\s*\S+\s*$/);
+    if (match) {
+      const lastText = match[0];
+      if (isTwitterPhotoUrl(lastText)) {
+        tweet.text = tweet.text.substring(0, tweet.text.length - lastText.length);
+        continue;
+      }
+    }
+    break;
+  }
+
   let code = "";
 
   const parent = tweet?.referenced_tweets?.find(t => t.type === "replied_to");
