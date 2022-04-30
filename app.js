@@ -8,21 +8,30 @@ const express = require("express");
 const app = express();
 const port = 80;
 
-function parseJS(text) {
+async function parseJS(text) {
   const lines = text.split("\n");
 
   let inCode = false;
-  const newLines = lines.map((line) => {
+  const newLines = [];
+  for (const line of lines) {
     if (line.match(/^```/)) {
       inCode = !inCode;
-      return "";
-    }
+      newLines.push("");
+      continue;
+    } 
     if (inCode) {
-      return line.replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+      newLines.push(line.replace(/&lt;/g, "<").replace(/&gt;/g, ">"));
     } else {
-      return "// " + line;
+      if (!line.match(/^\s*$/)) {
+        newLines.push("// " + line);
+      }
+
+      const tweetId = getTweetIdFromUrl(line);
+      if (tweetId) {
+        newLines.push(await getTweetRecursive(tweetId));
+      }
     }
-  });
+  }
 
   return newLines.join("\n");
 }
@@ -31,27 +40,43 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
-// https://twitter.com/stevekrouse/status/1518981951385911298
+function getTweetIdFromUrl(url) {
+  const regex = /https:\/\/twitter\.com\/.*\/status\/(\d+)/;
+  const match = url.match(regex);
+  return match && match[1];
+}
+
+// https://twitter.com/JanPaul123/status/1520185309719261184
 async function getTweetRecursive(tweetId){
   const { data: tweet } = await client.v2.singleTweet(tweetId, {
     'tweet.fields': [
       'referenced_tweets',
-      'conversation_id'
+      'conversation_id',
+      'entities',
     ]
   });
-  if (!tweet.referenced_tweets) {
-    return parseJS(tweet.text);
-  } else {
-    if (tweet.referenced_tweets[0].type === "replied_to") {
-      return await getTweetRecursive(tweet.referenced_tweets[0].id) + "\n\n" + parseJS(tweet.text);
-    }
-    // TODO - search for ancestors
+
+  // replace the twitter short urls ie 'https://t.co/vNeCDdhwxD'
+  // with the expanded, origial url
+  for (const entity of tweet?.entities?.urls || []) {
+    tweet.text = tweet.text.replaceAll(entity.url, entity.expanded_url);
   }
+  
+  let code = "";
+
+  const parent = tweet?.referenced_tweets?.find(t => t.type === "replied_to");
+  if (parent) {
+    code = await getTweetRecursive(parent.id);
+  }
+
+  code += "\n\n// embedding tweet: " + tweetId + "\n\n" + await parseJS(tweet.text) + "\n\n";
+
+  return code;
 }
-console.log(getTweetRecursive("1518981951385911298"));
+console.log(getTweetRecursive("1520185309719261184"));
 
 app.get("/:username/status/:tweetId", async (req, res) => {  
-  res.send(`<script>${await getTweetRecursive(req.params.tweetId)}</script>`);
+  res.send(`<script>\n\n${await getTweetRecursive(req.params.tweetId)}</script>`);
 });
 
 app.listen(port, () => {
@@ -69,6 +94,7 @@ app.listen(port, () => {
 
 const { Autohook } = require("twitter-autohook"); // uses ngrok
 var Twit = require("twit");
+const { nextTick } = require('process');
 const T = new Twit({
   consumer_key: process.env.TWITTER_CONSUMER_KEY,
   consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
