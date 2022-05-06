@@ -85,10 +85,7 @@ async function getTweetRecursive(tweetId) {
   }
 
   code +=
-    "\n// embedding tweet: " +
-    tweetId +
-    "\n" +
-    (await parseJS(tweet.text));
+    "\n// embedding tweet: " + tweetId + "\n" + (await parseJS(tweet.text));
 
   return code;
 }
