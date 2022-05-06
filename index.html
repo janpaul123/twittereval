@@ -94,7 +94,12 @@
 
         function eval() {
           const iframe = document.getElementById("output");
-          iframe.src = `/eval/${encodeURIComponent(editor.getValue())}`;
+          let code = editor.getValue();
+          // prevent empty code from not matching the URL which requires something
+          if (code === "") {
+            code = "// no code to evaluate";
+          }
+          iframe.src = `/eval/${encodeURIComponent(code)}`;
           localStorage.setItem("code", editor.getValue());
         }
         eval();
