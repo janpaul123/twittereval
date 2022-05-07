@@ -13,6 +13,8 @@ const path = require("path");
 const app = express();
 const port = 80;
 
+app.use("/node_modules/", express.static(__dirname + "/node_modules/"));
+
 const cache = {};
 async function getTweet(tweetId) {
   if (cache[tweetId]) {
@@ -27,10 +29,7 @@ async function getTweet(tweetId) {
   return tweet;
 }
 
-app.use("/node_modules/", express.static(__dirname + "/node_modules/"));
-
 async function parseJS(text) {
-  //
   const regex = /(?:https:\/\/)?(?:www\.)?twitter\.com\/.*\/status\/(\d+)/g;
   const matches = text.matchAll(regex);
   for (const m of matches) {
