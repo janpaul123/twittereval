@@ -74,6 +74,7 @@
             minimap: { enabled: false },
           }
         );
+        editor.getModel().updateOptions({ tabSize: 2 });
         function debounce(func, wait = 300, immediate) {
           var timeout;
           return function () {
