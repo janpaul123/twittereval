@@ -38,7 +38,10 @@ async function parseJS(text) {
       text = text.replace(m[0], await getTweetRecursive(m[1]));
     }
   }
-  return text.split("\n").join("\n  ");
+  return text
+    .replaceAll(/&lt;/g, "<")
+    .replaceAll(/&gt;/g, ">")
+    .replaceAll(/&amp;/g, "&")
 }
 
 app.get("/", (req, res) => {
@@ -111,9 +114,9 @@ app.get("/:username/status/:tweetId", async (req, res) => {
 
 app.get("/eval/:text", async (req, res) => {
   res.send(
-    `<script>\nwindow.addEventListener('load', () => {\n  ${await parseJS(
+    `<script>\nwindow.addEventListener('load', () => {\n  ${(await parseJS(
       req.params.text
-    )}\n});\n</script>`
+    )).replaceAll(/\n/g, "\n  ")}\n});\n</script>`
   );
 });
 
