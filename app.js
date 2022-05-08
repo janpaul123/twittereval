@@ -59,9 +59,12 @@ async function getTweetRecursive(tweetId) {
   // replace the twitter short urls ie 'https://t.co/vNeCDdhwxD'
   // with the original text
   // important for keeping `array.map` as it was (and not as a url with http:// added)
+  const reservedTLDs = [".map", ".date"];
   for (const entity of tweet?.entities?.urls || []) {
-    tweet.text = tweet.text.replace(entity.url, entity.display_url);
+    tweet.text = tweet.text.replace(entity.url, 
+      reservedTLDs.some(tld => entity.display_url.includes(tld)) ? entity.display_url : entity.expanded_url );
   }
+
 
   // twitter appends the URLs of any image attachments to the text body
   // this code repeatedly removes the final words if they are twitter photos
