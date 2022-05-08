@@ -109,17 +109,20 @@ async function testCache() {
 }
 // testCache();
 
+function scriptify(code) {
+  return `<script>\nwindow.addEventListener('load', () => {\n  ${code.replaceAll(/\n/g, "\n  ")}\n});\n</script>`
+}
+
 app.get("/:username/status/:tweetId", async (req, res) => {
   res.send(
-    `<script>\n\n${await getTweetRecursive(req.params.tweetId)}</script>`
+    scriptify(await getTweetRecursive(req.params.tweetId))
   );
 });
 
 app.get("/eval/:text", async (req, res) => {
-  res.send(
-    `<script>\nwindow.addEventListener('load', () => {\n  ${(await parseJS(
+  res.send(scriptify(await parseJS(
       req.params.text
-    )).replaceAll(/\n/g, "\n  ")}\n});\n</script>`
+    ))
   );
 });
 
