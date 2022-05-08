@@ -29,9 +29,10 @@ async function getTweet(tweetId) {
   return tweet;
 }
 
+const tweetRegex = /(?:https:\/\/)?(?:www\.)?twitter\.com\/.*\/status\/(\d+)(?:\?.*)?/g;
+
 async function parseJS(text) {
-  const regex = /(?:https:\/\/)?(?:www\.)?twitter\.com\/.*\/status\/(\d+)/g;
-  const matches = text.matchAll(regex);
+  const matches = text.matchAll(tweetRegex);
   for (const m of matches) {
     if (m[1]) {
       text = text.replace(m[0], await getTweetRecursive(m[1]));
